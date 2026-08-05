@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import json
 from groq import Groq
-from google.colab import userdata
 
 # Page Configuration
 st.set_page_config(page_title="AI Career & Product Suite", page_icon="🚀", layout="wide")
@@ -10,16 +9,25 @@ st.set_page_config(page_title="AI Career & Product Suite", page_icon="🚀", lay
 st.title("🚀 AI Student Utility Suite")
 st.write("Build V1 applications powered by Groq & Llama 3.3")
 
-# Fetch secret key from Colab environment
-api_key = userdata.get('GROQ_API_KEY')
+api_key = os.environ.get("GROQ_API_KEY")
 
 if not api_key:
-    st.error("⚠️ Groq API Key not found! Please configure it in your Colab secrets using `userdata.set('GROQ_API_KEY', 'YOUR_API_KEY')`.")
+    try:
+        # Try to import userdata from google.colab if available (for Colab environment)
+        from google.colab import userdata
+        api_key = userdata.get('GROQ_API_KEY')
+    except ImportError:
+        # If not in Colab, try Streamlit secrets
+        if "GROQ_API_KEY" in st.secrets:
+            api_key = st.secrets["GROQ_API_KEY"]
+
+if not api_key:
+    st.error("⚠️ Groq API Key not found! Please configure it either as an environment variable 'GROQ_API_KEY', in `st.secrets` for Streamlit deployments, or in Colab secrets using `userdata.set('GROQ_API_KEY', 'YOUR_API_KEY')`.")
     st.stop()
 
 client = Groq(api_key=api_key)
 
-tab1, tab2 = st.tabs(["🎯 Resume & Email Tailor", "💡 Hackathon MVP Scoper"])
+tab1, tab2, tab3 = st.tabs(["🎯 Resume & Email Tailor", "💡 Hackathon MVP Scoper", "🎓 Internship Project Scoper"])
 
 # =========================================================
 # TAB 1: RESUME TAILOR
@@ -124,7 +132,7 @@ with tab2:
 # =========================================================
 # TAB 3: INTERNSHIP PROJECT SCOPER
 # =========================================================
-with st.expander("Internship Project Scoper", expanded=False):
+with tab3:
     st.header("Internship Project Scoper")
 
     uploaded_resume = st.file_uploader(
