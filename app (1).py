@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import json
 from groq import Groq
+from google.colab import userdata
 
 # Page Configuration
 st.set_page_config(page_title="AI Career & Product Suite", page_icon="🚀", layout="wide")
@@ -9,13 +10,11 @@ st.set_page_config(page_title="AI Career & Product Suite", page_icon="🚀", lay
 st.title("🚀 AI Student Utility Suite")
 st.write("Build V1 applications powered by Groq & Llama 3.3")
 
-api_key = os.environ.get("GROQ_API_KEY")
-if not api_key:
-    if "GROQ_API_KEY" in st.secrets:
-        api_key = st.secrets["GROQ_API_KEY"]
+# Fetch secret key from Colab environment
+api_key = userdata.get('GROQ_API_KEY')
 
 if not api_key:
-    st.error("⚠️ Groq API Key not found! Please configure it in your secrets.")
+    st.error("⚠️ Groq API Key not found! Please configure it in your Colab secrets using `userdata.set('GROQ_API_KEY', 'YOUR_API_KEY')`.")
     st.stop()
 
 client = Groq(api_key=api_key)
@@ -46,34 +45,13 @@ with tab1:
             st.warning("Please provide both Resume and Job Description.")
         else:
             PROMPTS = {
-                "LinkedIn Summary": f"""You are an expert career coach. Write a compelling LinkedIn "About" Summary for the candidate, positioning them for the target Job Description.
-STRICT RULES:
-1. ONLY use facts, skills, and metrics explicitly stated in the RESUME. NO hallucinations.
-2. Tone: Professional, forward-looking, and engaging. Maximum 3 short paragraphs.
-RESUME: {resume_input}
-JOB DESCRIPTION: {jd_input}""",
+                "LinkedIn Summary": f"""You are an expert career coach. Write a compelling LinkedIn "About" Summary for the candidate, positioning them for the target Job Description.\nSTRICT RULES:\n1. ONLY use facts, skills, and metrics explicitly stated in the RESUME. NO hallucinations.\n2. Tone: Professional, forward-looking, and engaging. Maximum 3 short paragraphs.\nRESUME: {resume_input}\nJOB DESCRIPTION: {jd_input}""",
 
-                "LinkedIn DM": f"""You are an expert career coach. Write a highly concise LinkedIn Direct Message (under 75 words) to a recruiter for the target Job Description.
-STRICT RULES:
-1. ONLY use facts from the RESUME. NO hallucinations.
-2. Tone: Direct, polite, and confident. Include a clear Call to Action (e.g., a 10-min chat).
-RESUME: {resume_input}
-JOB DESCRIPTION: {jd_input}""",
+                "LinkedIn DM": f"""You are an expert career coach. Write a highly concise LinkedIn Direct Message (under 75 words) to a recruiter for the target Job Description.\nSTRICT RULES:\n1. ONLY use facts from the RESUME. NO hallucinations.\n2. Tone: Direct, polite, and confident. Include a clear Call to Action (e.g., a 10-min chat).\nRESUME: {resume_input}\nJOB DESCRIPTION: {jd_input}""",
 
-                "Cold Email": f"""You are an expert career coach. Write a Cold Email to a hiring manager for the target Job Description.
-STRICT RULES:
-1. ONLY use facts from the RESUME. NO hallucinations.
-2. Must include a catchy, professional Subject Line.
-3. Tone: Professional, value-driven. Map 1-2 key resume achievements directly to the job requirements.
-RESUME: {resume_input}
-JOB DESCRIPTION: {jd_input}""",
+                "Cold Email": f"""You are an expert career coach. Write a Cold Email to a hiring manager for the target Job Description.\nSTRICT RULES:\n1. ONLY use facts from the RESUME. NO hallucinations.\n2. Must include a catchy, professional Subject Line.\n3. Tone: Professional, value-driven. Map 1-2 key resume achievements directly to the job requirements.\nRESUME: {resume_input}\nJOB DESCRIPTION: {jd_input}""",
 
-                "Cover Letter": f"""You are an expert career coach. Write a formal Cover Letter for the target Job Description.
-STRICT RULES:
-1. ONLY use facts from the RESUME. NO hallucinations.
-2. Structure: Formal greeting, engaging opening, 2 body paragraphs matching resume skills to JD needs, and a professional closing.
-RESUME: {resume_input}
-JOB DESCRIPTION: {jd_input}"""
+                "Cover Letter": f"""You are an expert career coach. Write a formal Cover Letter for the target Job Description.\nSTRICT RULES:\n1. ONLY use facts from the RESUME. NO hallucinations.\n2. Structure: Formal greeting, engaging opening, 2 body paragraphs matching resume skills to JD needs, and a professional closing.\nRESUME: {resume_input}\nJOB DESCRIPTION: {jd_input}"""
             }
             
             system_prompt = PROMPTS[outreach_type]
@@ -146,7 +124,7 @@ with tab2:
 # =========================================================
 # TAB 3: INTERNSHIP PROJECT SCOPER
 # =========================================================
-with tab3:
+with st.expander("Internship Project Scoper", expanded=False):
     st.header("Internship Project Scoper")
 
     uploaded_resume = st.file_uploader(
@@ -184,6 +162,12 @@ with tab3:
         if uploaded_resume is None:
             st.warning("Please upload your resume.")
         else:
+            # Before trying to import PdfReader, we should install pypdf if it's not already installed.
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                st.error("⚠️ The 'pypdf' library is required for PDF processing but is not installed. Please add `!pip install pypdf` in a code cell and run it.")
+                st.stop()
 
             # Extract text from PDF
             pdf_reader = PdfReader(uploaded_resume)
